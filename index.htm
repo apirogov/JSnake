@@ -28,6 +28,10 @@
 					<input id="showhelp" type="button" value="Show help" /><br />
 					<br />
 					<strong>Options</strong><br />
+					Game mode:
+					<input id="chk_jsmode" type="radio" name="gmode" checked="checked" /> JSnake Mode
+					<input id="chk_clmode" type="radio" name="gmode" /> Classic Mode<br />
+
 					Game speed:
 					<input id="sp_slow" type="radio" name="gspeed"/> Slow
 					<input id="sp_medium" type="radio" name="gspeed" checked="checked" /> Medium
@@ -39,7 +43,6 @@
 					<input id="sz_large" type="radio" name="fsize" /> Large<br />
 
 					<input id="chk_walls" type="checkbox" /> Deadly walls<br />
-					<input id="chk_clmode" type="checkbox" /> Classic Mode<br />
 				</form>
 				<div id="lastscore">
 					<br />
@@ -73,8 +76,9 @@
 				$("#help").css("display","inline");
 			})
 
-			$("#chk_clmode").click(function() {
-					$("#sz_small").attr("checked",true);
+			function changeMode() {
+					$("#sz_small").attr("checked",$("#chk_clmode").attr("checked"));
+					$("#sz_medium").attr("checked",!$("#chk_clmode").attr("checked"));
 					$("#sp_medium").attr("checked",true);
 
 					$("#sz_small").attr("disabled",$("#chk_clmode").attr("checked"));
@@ -86,7 +90,9 @@
 
 					$("#chk_walls").attr("disabled",$("#chk_clmode").attr("checked"));
 					$("#chk_walls").attr("checked", $("#chk_clmode").attr("checked"));
-			})
+			}
+			$("#chk_clmode").click(changeMode);
+			$("#chk_jsmode").click(changeMode);
 		--></script>
 	<div id="help">
 		<h2>Help</h2>
