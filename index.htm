@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<meta name="google-site-verification" content="XdWytqaPtK1wkf0eyMlar0sXR8JuRDAL3QyZ3qnPBJI" />
+
 		<meta name="author" content="Anton Pirogov" />
 		<meta name="description" content="Online snake game, implemented in pure JavaScript/HTML5 with JQuery & ProcessingJS" />
 		<meta name="keywords" content="jsnake, processingjs, snake, game, online" />
@@ -11,8 +13,9 @@
 		<script type="text/javascript" src="./jsnake.js"></script>
 		<style type="text/css"><!--
 			body { font-family: sans-serif; }
-			#game { display: none }
-			#lastscore { display: none }
+			#game { display: none; }
+			#help { display: none; }
+			#lastscore { display: none; }
 		--></style>
 	</head>
 	<body>
@@ -22,6 +25,7 @@
 			<div id="menu">
 				<form>
 					<input id="start" type="button" value="New game" /><br />
+					<input id="showhelp" type="button" value="Show help" /><br />
 					<br />
 					<strong>Options</strong><br />
 					Board size:
@@ -47,9 +51,14 @@
 				var canvas = document.getElementById("canvas1");
 				$("#menu").css("display","none");
 				$("#game").css("display","inline");
+				$("#help").css("display","none");
 	
 				// attaching the sketch function to the canvas
 				var p = new Processing(canvas, sketch);
+			})
+
+			$("#showhelp").click(function() {
+				$("#help").css("display","inline");
 			})
 
 			$("#chk_clmode").click(function() {
@@ -61,6 +70,16 @@
 					$("#chk_walls").attr("checked", $("#chk_clmode").attr("checked"));
 			})
 		--></script>
+	<div id="help">
+		<h2>Help</h2>
+		This is an online snake game inspired by DeluxeSnake. Use the arrow keys
+		to change the movement direction of the snake and try to collect all spawning
+		food pieces. The snake grows by the amount written on the food and twice the amount 
+		is added to your score. Red food shrinks the snake, but gives only the half of the
+		points. Food is getting bad over time (transparent). For every piece you were not
+		able to collect it's value is subtracted from your score. You can pause the game
+		with P and go back to the menu with ESC. Have fun!
+	</div>
 
 	<div id="credits" style="clear:left; float:right; font-size:xx-small; text-align:right;">
 		<p>
