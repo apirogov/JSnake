@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 		<meta name="google-site-verification" content="XdWytqaPtK1wkf0eyMlar0sXR8JuRDAL3QyZ3qnPBJI" />
 
 		<meta name="author" content="Anton Pirogov" />
@@ -12,7 +13,7 @@
 		<script type="text/javascript" src="./processing-1.0.0.js"></script>
 		<script type="text/javascript" src="./jsnake.js"></script>
 		<style type="text/css"><!--
-			body { font-family: sans-serif; }
+			body { font-family: sans-serif; text-align: center; }
 			#game { display: none; }
 			#help { display: none; }
 			#lastscore { display: none; }
@@ -20,47 +21,44 @@
 		--></style>
 	</head>
 	<body>
-		<center>
-			<h1>JSnake</h1>
-			<div id="menu">
-				<form>
-					<input id="start" type="button" value="New game" /><br />
-					<input id="showhelp" type="button" value="Show help" /><br />
-					<br />
-					<strong>Options</strong><br />
-					Game mode:
-					<input id="chk_jsmode" type="radio" name="gmode" checked="checked" /> JSnake Mode
-					<input id="chk_clmode" type="radio" name="gmode" /> Classic Mode<br />
+		<h1>JSnake</h1>
+		<div id="menu">
+			<form>
+				<input id="start" type="button" value="New game" /><br />
+				<input id="showhelp" type="button" value="Show help" /><br />
+				<br />
+				<strong>Options</strong><br />
+				Game mode:
+				<input id="chk_jsmode" type="radio" name="gmode" checked="checked" /> JSnake Mode
+				<input id="chk_clmode" type="radio" name="gmode" /> Classic Mode<br />
 
-					Game speed:
-					<input id="sp_slow" type="radio" name="gspeed"/> Slow
-					<input id="sp_medium" type="radio" name="gspeed" checked="checked" /> Medium
-					<input id="sp_fast" type="radio" name="gspeed" /> Fast<br />
+				Game speed:
+				<input id="sp_slow" type="radio" name="gspeed"/> Slow
+				<input id="sp_medium" type="radio" name="gspeed" checked="checked" /> Medium
+				<input id="sp_fast" type="radio" name="gspeed" /> Fast<br />
 
-					Board size:
-					<input id="sz_small" type="radio" name="fsize" /> Small
-					<input id="sz_medium" type="radio" name="fsize" checked="checked" /> Medium
-					<input id="sz_large" type="radio" name="fsize" /> Large<br />
+				Board size:
+				<input id="sz_small" type="radio" name="fsize" /> Small
+				<input id="sz_medium" type="radio" name="fsize" checked="checked" /> Medium
+				<input id="sz_large" type="radio" name="fsize" /> Large<br />
 
-					<input id="chk_walls" type="checkbox" /> Deadly walls<br />
-				</form>
-				<div id="lastscore">
-					<br />
-					<strong>Your last score:</strong> <span id="lscore" />
+				<input id="chk_walls" type="checkbox" /> Deadly walls<br />
+			</form>
+			<div id="lastscore">
+				<br />
+				<strong>Your last score:</strong> <span id="lscore"></span>
+			</div>
+		</div>
+		<div id="game">
+			<div><strong>Score: <span id="score"></span></strong></div>
+				<div>
+					<strong>
+						Length: <span id="slength"></span>
+						<span id="statconfused">CONFUSED</span>
+					</strong>
 				</div>
-			</div>
-			<div id="game">
-				<div><strong>Score: <span id="score" /></strong></div>
-					<div>
-						<strong>
-							Length: <span id="slength"></span>
-							<span id="statconfused">CONFUSED</span>
-						</strong>
-					</div>
-				<canvas id="canvas1" width="640" height="480"></canvas>
-			</div>
-		</center>
-		
+			<canvas id="canvas1" width="640" height="480"></canvas>
+		</div>
 		<script type="text/javascript"><!--
 			$("#start").click(function() {
 				var canvas = document.getElementById("canvas1");
@@ -128,7 +126,7 @@
 		<br/>
 	</div>
 
-	<div id="debug" />
+	<div id="debug"></div>
 	</body>
 </html>
 
