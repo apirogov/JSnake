@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="author" content="Anton Pirogov" />
+		<meta name="description" content="Online snake game, implemented in pure JavaScript/HTML5 with JQuery & ProcessingJS" />
+		<meta name="keywords" content="jsnake, processingjs, snake, game, online" />
+
+		<title>JSnake</title>
+		<script type="text/javascript" src="./jquery.js"></script>
+		<script type="text/javascript" src="./processing-1.0.0.js"></script>
+		<script type="text/javascript" src="./jsnake.js"></script>
+		<style type="text/css"><!--
+			body { font-family: sans-serif; }
+			#game { display: none }
+			#lastscore { display: none }
+		--></style>
+	</head>
+	<body>
+		<br /><br />
+		<center>
+			<h1>JSnake</h1>
+			<div id="menu">
+				<form>
+					<input id="start" type="button" value="New game" /><br />
+					<br />
+					<strong>Options</strong><br />
+					Board size:
+					<input id="sz_small" type="radio" name="fsize" value="small" /> Small
+					<input id="sz_medium" type="radio" name="fsize" value="medium" checked="checked" /> Medium
+					<input id="sz_large" type="radio" name="fsize" value="large" /> Large<br />
+					<input id="chk_walls" type="checkbox" /> Deadly walls<br />
+					<input id="chk_clmode" type="checkbox" /> Classic Mode<br />
+				</form>
+				<div id="lastscore">
+					<br />
+					<strong>Your last score:</strong> <span id="lscore" />
+				</div>
+			</div>
+			<div id="game">
+				<div><strong>Score: <span id="score" /></strong></div>
+				<canvas id="canvas1" width="640" height="480"></canvas>
+			</div>
+		</center>
+		
+		<script type="text/javascript"><!--
+			$("#start").click(function() {
+				var canvas = document.getElementById("canvas1");
+				$("#menu").css("display","none");
+				$("#game").css("display","inline");
+	
+				// attaching the sketch function to the canvas
+				var p = new Processing(canvas, sketch);
+			})
+
+			$("#chk_clmode").click(function() {
+					$("#sz_small").attr("checked",true);
+					$("#sz_small").attr("disabled",$("#chk_clmode").attr("checked"));
+					$("#sz_medium").attr("disabled",$("#chk_clmode").attr("checked"));
+					$("#sz_large").attr("disabled",$("#chk_clmode").attr("checked"));
+					$("#chk_walls").attr("disabled",$("#chk_clmode").attr("checked"));
+					$("#chk_walls").attr("checked", $("#chk_clmode").attr("checked"));
+			})
+		--></script>
+
+	<div id="credits" style="clear:left; float:right; font-size:xx-small; text-align:right;">
+		<p>
+			<a href="http://validator.w3.org/check?uri=referer">
+				<img style="border:0;width:88px;height:31px"
+				  src="http://www.saetek.net/Images/Valid_HTML5.gif"
+				  alt="Valid HTML5" height="31" width="88" />
+			</a>
+		    <a href="http://jigsaw.w3.org/css-validator/check/referer">
+				<img style="border:0;width:88px;height:31px"
+				  src="http://jigsaw.w3.org/css-validator/images/vcss"
+				  alt="CSS is valid!" />
+			</a>
+		</p>
+
+		Copyright (C) 2010 Anton Pirogov
+		<br/>
+	</div>
+
+	<div id="debug" />
+	</body>
+</html>
+
