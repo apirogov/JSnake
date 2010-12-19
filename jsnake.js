@@ -25,7 +25,12 @@ function sketch(p) {
 	/* no more than one movement per frame to prevent 180° turns */
 	var movementlock=false;
 	var pause=false;
+	var pausestart=0;
 	var gameover=false;
+
+	/* special stuff */
+	var invertkeys=false;
+	var invertkeystart = 0; /* will be set when confusion food is eaten to count 10 sec */
 
 	/* Snake fragment coordinates */
 	var sx = new Array();
@@ -35,9 +40,10 @@ function sketch(p) {
 	/* Field pieces/food coordinates */
 	var fx = new Array();
 	var fy = new Array();
-	var fc = new Array(); /* snake color */
+	var fc = new Array(); /* food color */
 	var ft = new Array(); /* food spawn time */
 	var fv = new Array(); /* food value */
+	var fr = new Array(); /* food "race" */
 
 	/* Snake movement direction */
 	var dx = 1;
@@ -45,12 +51,15 @@ function sketch(p) {
 	var score=0;
 
 	/* settings */
+	var framerate=10;
 	var cellsize=16;		/* size of a single food/snake cell */
 	var classicmode=false;	/* auto spawn, valued food, aging, walls? or classic good old snake? */
 	var walls=false;		/* walls = death or left -> comes from right? */
-	var maxage=100;			/* frames a food piece is allowed to live (0=no aging)*/
+	var maxage=10;			/* seconds a food piece is allowed to live (0=no aging)*/
 
 	var backgroundimg = p.loadImage("background.png"); /* pre-rendered background */
+	var confusedimg = p.loadImage("confused.png");	/* pic of confusion food */
+	var bombimg = p.loadImage("bomb.png");	/* pic of bomb food */
 	var txtfont = p.loadFont("Courier New");  
 
 	/* prints something into debug div */
@@ -63,8 +72,9 @@ function sketch(p) {
 		return p.color(p.random(0,128),p.random(0,128),p.random(0,128));
 	}
 
-	/* adds a new piece of food... searches for an empty place */
+	/* adds a new piece of food... */
 	function spawnFood() {
+		/* find an empty spot */
 		var x,y;
 		do {
 			x=p.int(p.random(0,p.width/cellsize-1))
@@ -75,17 +85,26 @@ function sketch(p) {
 		fy.push(y);
 		fc.push(randSnakeClr());
 		ft.push(p.frameCount);
+		if (fx.length>5) { /* a lot of stuff... much confusion food -> 10% chance for a bomb */
+			if(p.int(p.random(0,9))==0)
+				fr.push(2); /* bomb */
+			else
+				fr.push(0); /* normal */
+		} else
+			fr.push(0); /* normal food */
 
+		/* generate a value for the piece */
 		if (classicmode)
 			fv.push(1);
 		else {
 			var val = p.int(p.random(1,9));
-			if (p.int(p.random(0,3))==0)
+			if (p.int(p.random(0,4))==0)
 				val *= -1;
 			fv.push(val);
 		}
 	}
 	
+	/* add new pice in right direction, drop last */
 	function moveSnake() {
 		sx.pop();
 		sy.pop();
@@ -93,7 +112,6 @@ function sketch(p) {
 		sy.unshift(sy[0]+dy);
 	}
 
-	
 	function checkCollideFood() {
 		var cfi=0;
 		var i=0;
@@ -103,7 +121,6 @@ function sketch(p) {
 		
 		if (i==fx.length) //no match
 			cfi = -1;
-		
 		cfi = i;	//collided food piece index
 
 		if (cfi != -1) { /* got food */
@@ -112,34 +129,50 @@ function sketch(p) {
 			var x = fx.splice(cfi, 1);
 			var y = fy.splice(cfi, 1);
 			var v = fv.splice(cfi, 1);
+			var r = fr.splice(cfi, 1);
 			ft.splice(cfi,1);
 
-			/* positive value -> add to snake */
-			if(v>0) {
-				for(var i=0; i<v; i++) {
-					sx.push(x);
-					sy.push(y);
-					sc.push(c);
+			if (r==0) { /* normal */
+				/* positive value -> add to snake */
+				if(v>0) {
+					for(var i=0; i<v; i++) {
+						sx.push(x);
+						sy.push(y);
+						sc.push(c);
+					}
+					if (classicmode)
+						spawnFood();
 				}
-				if (classicmode)
-					spawnFood();
+				else /* negative -> shorten snake (not smaller than 3) */
+					for(var i=0; i<-v && sx.length>3; i++) {
+						sx.pop();
+						sy.pop();
+						sc.pop();
+					}
+			
+				/* increase + update score */
+				if (v>0)
+					score += v*2; /* positive -> twice the number of pieces */
+				else
+					score += -v; /* negative -> score the number of removed pieces */
+			} else if (r == 1) { /* confusion food */
+				invertkeys=true; /* 10 sec penalty */
+				invertkeystart = p.frameCount;
+				score += 50; /* constant 50 pts for confusion food if you survive :) */
+			} else if (r == 2) { /* its the salvation! the bomb! */
+				/* remove all that confusion food */
+				while(fr.indexOf(1) != -1) {
+					var index=fr.indexOf(1);
+					fr.splice(index,1);
+					ft.splice(index,1);
+					fv.splice(index,1);
+					fx.splice(index,1);
+					fy.splice(index,1);
+					fc.splice(index,1);
+				}
+				score += 50;
 			}
-			else /* negative -> shorten snake (not smaller than 3) */
-				for(var i=0; i<-v && sx.length>3; i++) {
-					sx.pop();
-					sy.pop();
-					sc.pop();
-				}
-
-			/* increase + update score */
-			if (v>0)
-				score += v*2; /* positive -> twice the number of pieces */
-			else
-				score += -v; /* negative -> score the number of removed pieces */
-			$("#score").html(score);
-
 		}
-
 	}
 
 	function checkDeath() {
@@ -176,51 +209,30 @@ function sketch(p) {
 		/* check for bad(old) food and remove it, decrease score */
 		if(maxage) /* aging active (>0) */
 			for(var i=0; i<ft.length; i++) {
-				if ((p.frameCount-ft[i]) > maxage) { /* older than 10 secs */
-					fx.splice(i,1);
-					fy.splice(i,1);
-					fc.splice(i,1);
-					ft.splice(i,1);
-					score-=Math.abs(fv.splice(i,1));
-					if (score<0)
+				if (fr[i]!=1 && (p.frameCount-ft[i]) > (maxage*framerate)) { /* food older than 10 secs (confusion food stays) */
+					if (fx.length>3 && p.int(p.random(0,5))==0) /* make confusion food 15% chance if >3 pieces on board */
+						fr[i]=1;
+					else {
+						/* remove it */
+						fx.splice(i,1);
+						fy.splice(i,1);
+						fc.splice(i,1);
+						ft.splice(i,1);
+						var val = fv.splice(i,1);
+
+						/* decrease score */
+						if (fr[i]==0) /* normal */
+							score-=Math.abs(val);
+						else if (fr[i]==2) /* bomb */
+							score-=30; /* idiot! how can you not get the bomb? */
+
+						fr.splice(i,1);
+					}
+					if (score<0)	/* but not less than zero of course */
 						score=0;
-					$("#score").html(score);
-						i--;
 				}
 			}
 	}
-
-	/* init */
-	p.setup = function() {
-		/* Read settings from menu */
-		classicmode = $("#chk_clmode").attr("checked");
-		walls = $("#chk_walls").attr("checked");
-		if ($("#sz_large").attr("checked"))
-			cellsize = 16;
-		else if($("#sz_medium").attr("checked"))
-			cellsize = 20;
-		else if($("#sz_small").attr("checked"))
-			cellsize = 32;
-
-		$("#score").html(score);
-
-		if (classicmode) { /* no aging of food in classic mode, enable walls */
-			maxage=0;
-			walls=true;
-		}
-
-		p.frameRate(10);
-		p.textFont(txtfont, cellsize*0.9);
-
-		/* init snake */
-		for(var i=3; i>0; i--) {
-			sx.push(i);
-			sy.push(0);
-			sc.push(randSnakeClr());
-		}
-
-		spawnFood();
-	};
 
 	function drawBackground(frompic) {
 		if (frompic) /* load from file (much faster) */
@@ -252,17 +264,57 @@ function sketch(p) {
 		p.textFont(txtfont, cellsize*0.9)
 	}
 
-	p.draw = function() {
-		movementlock = false; /* accept keys */
+	p.setup = function() {
+		/* Read settings from menu */
+		classicmode = $("#chk_clmode").attr("checked");
+		walls = $("#chk_walls").attr("checked");
 
+		if ($("#sz_large").attr("checked"))
+			cellsize = 16;
+		else if($("#sz_medium").attr("checked"))
+			cellsize = 20;
+		else if($("#sz_small").attr("checked"))
+			cellsize = 32;
+
+		if ($("#sp_slow").attr("checked"))
+			framerate = 5;
+		else if($("#sp_medium").attr("checked"))
+			framerate = 10;
+		else if($("#sp_fast").attr("checked"))
+			framerate = 15;
+
+		if (classicmode) { /* no aging of food in classic mode, enable walls */
+			maxage=0;
+			walls=true;
+		}
+
+		p.frameRate(framerate);
+		p.textFont(txtfont, cellsize*0.9);
+
+		/* init snake */
+		for(var i=3; i>0; i--) {
+			sx.push(i);
+			sy.push(0);
+			sc.push(randSnakeClr());
+		}
+
+		spawnFood();
+	};
+
+	p.draw = function() {
+		movementlock = false; /* accept arrow key again */
+
+		/* check time and stop inversion of keys after 10 sec */
+		if (invertkeys && (p.frameCount-invertkeystart)>100)
+			invertkeys=false;
+
+		/* draw nothing, just wait for any key to be pressed */
 		if (gameover)
 			return;
 
 		/* If paused, wait to unpause and do nothing */
-		if (pause) {
-			printMessage("GAME PAUSED");
+		if (pause)
 			return;
-		}
 
 		drawBackground(true);
 
@@ -281,70 +333,106 @@ function sketch(p) {
 			var age = p.frameCount - ft[i];
 			if (maxage == 0) /* no aging set */
 				age = 0;
+			var alpha = 255-p.int(age/(maxage*framerate)*250);
 
-			var alpha = 255-p.int(age/maxage*250);
+			if(fr[i]==0) { /* normal piece */
+				for(var j=0; j<cellsize/2; j++) {
+					p.stroke(p.color(p.red(fc[i])+j*4, p.green(fc[i])+j*4, p.blue(fc[i])+j*4, alpha));
+					p.rect(cellsize*fx[i]+j,cellsize*fy[i]+j,cellsize-2*j,cellsize-2*j);
+				}
 
-			for(var j=0; j<cellsize/2; j++) {
-				p.stroke(p.color(p.red(fc[i])+j*4, p.green(fc[i])+j*4, p.blue(fc[i])+j*4, alpha));
-				p.rect(cellsize*fx[i]+j,cellsize*fy[i]+j,cellsize-2*j,cellsize-2*j);
+				/* render value digit */
+				if (fv[i]<0) {
+					p.fill(p.color(255,0,0,alpha)); /* negative -> red */
+					p.text(-fv[i], cellsize*fx[i]+2, cellsize*(fy[i]+1)-3); /* render value */
+				}
+				else {
+					p.fill(p.color(255,255,255,alpha)); /* positive -> white */
+					p.text(fv[i], cellsize*fx[i]+2, cellsize*(fy[i]+1)-3); /* render value */
+				}
+				p.noFill();
+			} else if (fr[i] == 1) { /* confusion thingy */
+				p.image(confusedimg, cellsize*fx[i], cellsize*fy[i], confusedimg.width/32*cellsize, confusedimg.height/32*cellsize);
+			} else if (fr[i] == 2) { /* bomb */
+				p.image(bombimg, cellsize*fx[i], cellsize*fy[i], bombimg.width/32*cellsize, bombimg.height/32*cellsize);
 			}
-
-			/* render value */
-			if (fv[i]<0) {
-				p.fill(p.color(255,0,0,alpha));
-				p.text(-fv[i], cellsize*fx[i]+2, cellsize*(fy[i]+1)-3); /* render value */
-			}
-			else {
-				p.fill(p.color(255,255,255,alpha));
-				p.text(fv[i], cellsize*fx[i]+2, cellsize*(fy[i]+1)-3); /* render value */
-			}
-			p.noFill();
-
 		}
-		
+
 		moveSnake();
 		checkDeath();
 		checkCollideFood();
 		removeOldFood();
 
-		/* spawn new food every sec at 1/3 chance when not in classic mode*/
-		if (!classicmode)
-			if(p.frameCount % 10 == 0)
+		/* spawn new food every sec (slow=every 2 sec) at 1/3 chance when not in classic mode*/
+		if (!classicmode) {
+			var frate = framerate;
+			if (frate==5)
+				frate=10;
+			if((p.frameCount % frate) == 0)
 				if(p.int(p.random(0,2))==0)
 					spawnFood();
+		}
+
+		/* update stuff outside the canvas */
+		$("#score").html(score); /* show score on screen */
+		$("#slength").html(sx.length); /* show snake length */
+		if (invertkeys)
+			$("#statconfused").css("display","inline"); /* if confused, show it */
+		else
+			$("#statconfused").css("display","none"); /* if confused, show it */
+
 	};
 
 	/* Change snake direction */
 	p.keyPressed = function() {
 		if (!movementlock)
-			if(p.keyCode==p.DOWN && dy!=-1) {
-				dx=0;
-				dy=1;
-			} else if (p.keyCode==p.UP && dy!=1) {
-				dx=0;
-				dy=-1;
-			} else if (p.keyCode==p.LEFT && dx!=1) {
-				dx=-1;
-				dy=0;
-			} else if (p.keyCode==p.RIGHT && dx!=-1) {
-				dx=1;
-				dy=0;
-			} else if (p.key == 112)
-				pause = !pause;
-			else if (p.keyCode == p.ESC) {
-				gameover=true;
+			if (!invertkeys) {
+				if(p.keyCode==p.DOWN && dy!=-1) {
+					dx=0; dy=1;
+				} else if (p.keyCode==p.UP && dy!=1) {
+					dx=0; dy=-1;
+				} else if (p.keyCode==p.LEFT && dx!=1) {
+					dx=-1; dy=0;
+				} else if (p.keyCode==p.RIGHT && dx!=-1) {
+					dx=1; dy=0;
+				}
+			} else { /* confusion food - keys inverted */
+				if(p.keyCode==p.UP && dy!=-1) {
+					dx=0; dy=1;
+				} else if (p.keyCode==p.DOWN && dy!=1) {
+					dx=0; dy=-1;
+				} else if (p.keyCode==p.RIGHT && dx!=1) {
+					dx=-1; dy=0;
+				} else if (p.keyCode==p.LEFT && dx!=-1) {
+					dx=1; dy=0;
+				}			
 			}
+			
+		/* special keys */
+		if (p.key == 112 && !gameover) { /* toggle pause with p */
+			if (!pause) { /* start pause */
+				pause = true;
+				printMessage("GAME PAUSED");
+				pausestart = p.frameCount;
+			} else { /* continue game */
+				pause = false;
+				/* manipulate all food birth stamps, otherwise it would have been aged */
+				for(var i=0; i<ft.length; i++)
+					ft[i] += p.frameCount-pausestart;
+			}
+		} else if (p.keyCode == p.ESC) /* esc = quit game */
+			gameover=true;
 
+		/* quit/lost -> anykey back to main menu */
 		if (gameover && (p.keyCode==p.ENTER || p.keyCode==p.RETURN || p.key==32 || p.keyCode==p.ESC)) {
 			p.exit();
 			$("#game").css("display","none");
 			$("#menu").css("display","inline");
 			$("#lastscore").css("display","inline");
 			$("#lscore").html(score);
-
 		}
 
-		movementlock=true;
+		movementlock=true; /* will be unlocked by draw... aim: one direction change per frame */
 	};
 
 }

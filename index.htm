@@ -16,10 +16,10 @@
 			#game { display: none; }
 			#help { display: none; }
 			#lastscore { display: none; }
+			#statconfused { color: red; display: none; }
 		--></style>
 	</head>
 	<body>
-		<br /><br />
 		<center>
 			<h1>JSnake</h1>
 			<div id="menu">
@@ -28,10 +28,16 @@
 					<input id="showhelp" type="button" value="Show help" /><br />
 					<br />
 					<strong>Options</strong><br />
+					Game speed:
+					<input id="sp_slow" type="radio" name="gspeed"/> Slow
+					<input id="sp_medium" type="radio" name="gspeed" checked="checked" /> Medium
+					<input id="sp_fast" type="radio" name="gspeed" /> Fast<br />
+
 					Board size:
-					<input id="sz_small" type="radio" name="fsize" value="small" /> Small
-					<input id="sz_medium" type="radio" name="fsize" value="medium" checked="checked" /> Medium
-					<input id="sz_large" type="radio" name="fsize" value="large" /> Large<br />
+					<input id="sz_small" type="radio" name="fsize" /> Small
+					<input id="sz_medium" type="radio" name="fsize" checked="checked" /> Medium
+					<input id="sz_large" type="radio" name="fsize" /> Large<br />
+
 					<input id="chk_walls" type="checkbox" /> Deadly walls<br />
 					<input id="chk_clmode" type="checkbox" /> Classic Mode<br />
 				</form>
@@ -42,6 +48,12 @@
 			</div>
 			<div id="game">
 				<div><strong>Score: <span id="score" /></strong></div>
+					<div>
+						<strong>
+							Length: <span id="slength"></span>
+							<span id="statconfused">CONFUSED</span>
+						</strong>
+					</div>
 				<canvas id="canvas1" width="640" height="480"></canvas>
 			</div>
 		</center>
@@ -63,22 +75,33 @@
 
 			$("#chk_clmode").click(function() {
 					$("#sz_small").attr("checked",true);
+					$("#sp_medium").attr("checked",true);
+
 					$("#sz_small").attr("disabled",$("#chk_clmode").attr("checked"));
 					$("#sz_medium").attr("disabled",$("#chk_clmode").attr("checked"));
 					$("#sz_large").attr("disabled",$("#chk_clmode").attr("checked"));
+					$("#sp_slow").attr("disabled",$("#chk_clmode").attr("checked"));
+					$("#sp_medium").attr("disabled",$("#chk_clmode").attr("checked"));
+					$("#sp_fast").attr("disabled",$("#chk_clmode").attr("checked"));
+
 					$("#chk_walls").attr("disabled",$("#chk_clmode").attr("checked"));
 					$("#chk_walls").attr("checked", $("#chk_clmode").attr("checked"));
 			})
 		--></script>
 	<div id="help">
 		<h2>Help</h2>
-		This is an online snake game inspired by DeluxeSnake. Use the arrow keys
-		to change the movement direction of the snake and try to collect all spawning
-		food pieces. The snake grows by the amount written on the food and twice the amount 
-		is added to your score. Red food shrinks the snake, but gives only the half of the
-		points. Food is getting bad over time (transparent). For every piece you were not
-		able to collect it's value is subtracted from your score. You can pause the game
-		with P and go back to the menu with ESC. Have fun!
+		This is an <strong>online snake game</strong> inspired by DeluxeSnake. Use the <strong>arrow keys</strong>
+		to change the movement direction of the snake and try to <strong>collect all appearing
+		food pieces</strong>. The snake grows by the value written on the food. Food with red numbers shrinks
+		the snake.<br />
+		Food is getting bad over time (transparent). For every piece you were not able to collect
+		it's value is subtracted from your score. If there are <strong>too many pieces</strong> on the screen, there is a chance that the bad food will
+		stay as poisonous <strong>confusion food</strong>. If you eat it, the arrow keys get inverted for 10 seconds.
+		If you are lucky, eventually a <strong>bomb</strong> will appear. Eating it <strong>removes all confusion food</strong> items.
+		<br />
+		You can pause the game with P and go back to the menu with ESC.<br />
+		<br />
+		Have fun! :)
 	</div>
 
 	<div id="credits" style="clear:left; float:right; font-size:xx-small; text-align:right;">
