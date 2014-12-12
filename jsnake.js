@@ -31,6 +31,7 @@ function sketch(p) {
 	/* special stuff */
 	var invertkeys=false;
 	var invertkeystart = 0; /* will be set when confusion food is eaten to count 10 sec */
+	var bombset = false;
 
 	/* Snake fragment coordinates */
 	var sx = new Array();
@@ -45,9 +46,10 @@ function sketch(p) {
 	var fv = new Array(); /* food value */
 	var fr = new Array(); /* food "race" */
 
-	/* Snake movement direction */
-	var dx = 1;
-	var dy = 0;
+	/* Snake movement direction (stores last 2 keypress-directions to make smooth turns possible) */
+	var dx = new Array();
+	var dy = new Array();
+
 	var score=0;
 
 	/* settings */
@@ -85,10 +87,11 @@ function sketch(p) {
 		fy.push(y);
 		fc.push(randSnakeClr());
 		ft.push(p.frameCount);
-		if (fx.length>5) { /* a lot of stuff... much confusion food -> 10% chance for a bomb */
-			if(p.int(p.random(0,9))==0)
+		if (fx.length>5 && !bombset) { /* a lot of stuff... much confusion food -> 10% chance for a bomb */
+			if(p.int(p.random(0,9))==0) {
 				fr.push(2); /* bomb */
-			else
+				bombset=true; /* one bomb visible at a time */
+			} else
 				fr.push(0); /* normal */
 		} else
 			fr.push(0); /* normal food */
@@ -108,8 +111,12 @@ function sketch(p) {
 	function moveSnake() {
 		sx.pop();
 		sy.pop();
-		sx.unshift(sx[0]+dx);
-		sy.unshift(sy[0]+dy);
+		sx.unshift(sx[0]+dx[0]);
+		sy.unshift(sy[0]+dy[0]);
+		if (dx.length>1) { /* next in queue if there is one */
+			dx.shift();
+			dy.shift();
+		}
 	}
 
 	function checkCollideFood() {
@@ -169,8 +176,10 @@ function sketch(p) {
 					fx.splice(index,1);
 					fy.splice(index,1);
 					fc.splice(index,1);
+					score += 10; /* 10 points pro destroyed confusion food */
 				}
-				score += 50;
+				bombset = false; /* no bomb present anymore */
+				score += 30;
 			}
 		}
 	}
@@ -223,8 +232,10 @@ function sketch(p) {
 						/* decrease score */
 						if (fr[i]==0) /* normal */
 							score-=Math.abs(val);
-						else if (fr[i]==2) /* bomb */
+						else if (fr[i]==2) { /* bomb */
 							score-=30; /* idiot! how can you not get the bomb? */
+							bombset=false; /* next chance.. */
+						}
 
 						fr.splice(i,1);
 					}
@@ -292,6 +303,8 @@ function sketch(p) {
 		p.textFont(txtfont, cellsize*0.9);
 
 		/* init snake */
+		dx.push(1);
+		dy.push(0);
 		for(var i=3; i>0; i--) {
 			sx.push(i);
 			sy.push(0);
@@ -385,28 +398,24 @@ function sketch(p) {
 
 	/* Change snake direction */
 	p.keyPressed = function() {
-		if (!movementlock)
-			if (!invertkeys) {
-				if(p.keyCode==p.DOWN && dy!=-1) {
-					dx=0; dy=1;
-				} else if (p.keyCode==p.UP && dy!=1) {
-					dx=0; dy=-1;
-				} else if (p.keyCode==p.LEFT && dx!=1) {
-					dx=-1; dy=0;
-				} else if (p.keyCode==p.RIGHT && dx!=-1) {
-					dx=1; dy=0;
-				}
-			} else { /* confusion food - keys inverted */
-				if(p.keyCode==p.UP && dy!=-1) {
-					dx=0; dy=1;
-				} else if (p.keyCode==p.DOWN && dy!=1) {
-					dx=0; dy=-1;
-				} else if (p.keyCode==p.RIGHT && dx!=1) {
-					dx=-1; dy=0;
-				} else if (p.keyCode==p.LEFT && dx!=-1) {
-					dx=1; dy=0;
-				}			
-			}
+		/* invertkeys on when confusion food is eaten -> left<->right up<->down */
+		if((p.keyCode==p.DOWN || (invertkeys && p.keyCode==p.UP)) && dy!=-1) {
+			dx.push(0);
+			dy.push(1);
+		} else if ((p.keyCode==p.UP || (invertkeys && p.keyCode==p.DOWN)) && dy!=1) {
+			dx.push(0);
+			dy.push(-1);
+		} else if ((p.keyCode==p.LEFT || (invertkeys && p.keyCode==p.RIGHT)) && dx!=1) {
+			dx.push(-1);
+			dy.push(0);
+		} else if ((p.keyCode==p.RIGHT || (invertkeys && p.keyCode==p.LEFT)) && dx!=-1) {
+			dx.push(1);
+			dy.push(0);
+		}
+		if (dx.length>2) { /* not more than last 2 keys...  */
+			dx.shift();
+			dy.shift();
+		}
 			
 		/* special keys */
 		if (p.key == 112 && !gameover) { /* toggle pause with p */
